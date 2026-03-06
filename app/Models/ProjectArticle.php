@@ -7,13 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SectionProjet extends Model
+class ProjectArticle extends Model
 {
     use HasFactory, HasUuids;
 
     protected $fillable = [
         'projet_id',
-        'section_modele_id',
+        'article_id',
+        'article_variant_id',
         'ordre',
         'contenu_final',
     ];
@@ -27,8 +28,13 @@ class SectionProjet extends Model
         return $this->belongsTo(Projet::class);
     }
 
-    public function sectionModele(): BelongsTo
+    public function article(): BelongsTo
     {
-        return $this->belongsTo(SectionModele::class);
+        return $this->belongsTo(Article::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ArticleVariant::class, 'article_variant_id');
     }
 }

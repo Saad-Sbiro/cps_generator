@@ -8,19 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('catalogue_postes', function (Blueprint $table) {
+        Schema::create('prix_catalogues', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('designation');
+            $table->string('categorie');
+            $table->string('sous_categorie')->nullable();
+            $table->text('designation');
             $table->string('unite');
-            $table->decimal('prix_unitaire_ht_defaut', 15, 2)->default(0);
-            $table->text('description_technique');
-            $table->string('categorie')->nullable();
+            $table->decimal('prix_unitaire_ht_defaut', 12, 2)->default(0);
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('catalogue_postes');
+        Schema::dropIfExists('prix_catalogues');
     }
 };

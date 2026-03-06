@@ -8,14 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('ligne_prix_projets', function (Blueprint $table) {
+        Schema::create('project_prix', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('projet_id')->constrained('projets')->cascadeOnDelete();
-            $table->foreignUuid('poste_id')->constrained('catalogue_postes')->cascadeOnDelete();
-            $table->integer('numero_prix')->default(1);
-            $table->decimal('quantite', 15, 3);
-            $table->decimal('prix_unitaire_ht', 15, 2);
-            $table->decimal('total_ht', 15, 2)->storedAs('"quantite" * "prix_unitaire_ht"');
+            $table->foreignUuid('prix_catalogue_id')->constrained('prix_catalogues')->cascadeOnDelete();
+            $table->integer('numero_prix');
+            $table->decimal('quantite', 10, 2)->default(0);
+            $table->decimal('prix_unitaire_ht', 12, 2)->default(0);
+            $table->decimal('total_ht', 12, 2)->storedAs('quantite * prix_unitaire_ht');
             $table->integer('ordre')->default(0);
             $table->timestamps();
         });
@@ -23,6 +23,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('ligne_prix_projets');
+        Schema::dropIfExists('project_prix');
     }
 };

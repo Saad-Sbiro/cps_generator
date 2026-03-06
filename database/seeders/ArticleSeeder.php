@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\SectionModele;
+use App\Models\Article;
 use Illuminate\Database\Seeder;
 
-class SectionModeleSeeder extends Seeder
+class ArticleSeeder extends Seeder
 {
     public function run(): void
     {
@@ -69,7 +69,8 @@ class SectionModeleSeeder extends Seeder
 
         foreach ($adminTitles as $index => $title) {
             $num = $index + 1;
-            SectionModele::firstOrCreate(
+            
+            $article = Article::firstOrCreate(
                 ['code' => "ART{$num}"],
                 [
                     'titre'        => "ARTICLE - {$num} - {$title}",
@@ -78,10 +79,20 @@ class SectionModeleSeeder extends Seeder
                     'contenu'      => "Contenu de l'article $num à compléter...",
                 ]
             );
+
+            // Article model creates a default variant in its store method, but Seeder uses firstOrCreate
+            // which bypasses the controller logic, so we must add it manually here
+            if ($article->wasRecentlyCreated) {
+                $article->variants()->create([
+                    'label' => 'Variante par défaut',
+                    'contenu' => $article->contenu,
+                    'is_default' => true
+                ]);
+            }
         }
 
         // Keep 1 Tech Commune
-        SectionModele::firstOrCreate(
+        $tech = Article::firstOrCreate(
             ['code' => 'TECH_COMM'],
             [
                 'titre'        => 'Prescriptions Techniques Communes',
@@ -90,6 +101,9 @@ class SectionModeleSeeder extends Seeder
                 'contenu'      => "PRESCRIPTIONS GÉNÉRALES APPLICABLES À TOUS LES TRAVAUX\n\n1. NORMES ET RÉGLEMENTATIONS\nTous les travaux seront exécutés conformément aux normes et réglementations marocaines en vigueur.",
             ]
         );
+        if ($tech->wasRecentlyCreated) {
+            $tech->variants()->create(['label' => 'Variante par défaut', 'contenu' => $tech->contenu, 'is_default' => true]);
+        }
 
         // Keep RC
         $rcSections = [
@@ -110,7 +124,10 @@ class SectionModeleSeeder extends Seeder
         ];
 
         foreach ($rcSections as $data) {
-            SectionModele::firstOrCreate(['code' => $data['code']], $data);
+            $rc = Article::firstOrCreate(['code' => $data['code']], $data);
+            if ($rc->wasRecentlyCreated) {
+                $rc->variants()->create(['label' => 'Variante par défaut', 'contenu' => $rc->contenu, 'is_default' => true]);
+            }
         }
     }
 }

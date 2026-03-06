@@ -8,12 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('section_modeles', function (Blueprint $table) {
+        Schema::create('articles', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('code')->unique();
-            $table->string('titre');
+            $table->string('code')->unique();           // e.g. ART1, RC_ART1
+            $table->string('titre');                    // e.g. "Article 1: Objet du marché"
             $table->enum('type', ['CPS_ADMIN', 'CPS_FIN', 'CPS_TECH_COMMUNE', 'RC']);
-            $table->longText('contenu');
+            $table->longText('contenu');                // canonical default content / template
             $table->integer('ordre_defaut')->default(0);
             $table->timestamps();
         });
@@ -21,6 +21,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('section_modeles');
+        Schema::dropIfExists('articles');
     }
 };

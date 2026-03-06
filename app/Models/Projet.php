@@ -36,14 +36,14 @@ class Projet extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function lignes(): HasMany
+    public function projectPrix(): HasMany
     {
-        return $this->hasMany(LignePrixProjet::class)->orderBy('ordre');
+        return $this->hasMany(ProjectPrix::class)->orderBy('ordre');
     }
 
-    public function sections(): HasMany
+    public function projectArticles(): HasMany
     {
-        return $this->hasMany(SectionProjet::class)->orderBy('ordre');
+        return $this->hasMany(ProjectArticle::class)->orderBy('ordre');
     }
 
     public function exports(): HasMany
@@ -51,10 +51,9 @@ class Projet extends Model
         return $this->hasMany(ExportDocument::class)->latest();
     }
 
-    // ---- Computed totals ----
     public function getTotalHtAttribute(): float
     {
-        return (float) $this->lignes->sum('total_ht');
+        return (float) $this->projectPrix->sum('total_ht');
     }
 
     public function getTotalTvaAttribute(): float

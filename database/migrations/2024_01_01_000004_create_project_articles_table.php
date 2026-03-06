@@ -8,18 +8,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('section_projets', function (Blueprint $table) {
+        Schema::create('project_articles', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('projet_id')->constrained('projets')->cascadeOnDelete();
-            $table->foreignUuid('section_modele_id')->constrained('section_modeles')->cascadeOnDelete();
+            $table->foreignUuid('article_id')->constrained('articles')->cascadeOnDelete();
+            $table->foreignUuid('article_variant_id')
+                  ->nullable()
+                  ->constrained('article_variants')
+                  ->nullOnDelete();
             $table->integer('ordre')->default(0);
-            $table->longText('contenu_final');
+            $table->longText('contenu_final');          // placeholder-resolved final content
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('section_projets');
+        Schema::dropIfExists('project_articles');
     }
 };

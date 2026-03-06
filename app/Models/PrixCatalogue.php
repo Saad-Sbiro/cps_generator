@@ -8,17 +8,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class CataloguePoste extends Model
+class PrixCatalogue extends Model
 {
     use HasFactory, HasUuids;
 
     protected $fillable = [
         'user_id',
+        'categorie',
+        'sous_categorie',
         'designation',
         'unite',
         'prix_unitaire_ht_defaut',
-        'description_technique',
-        'categorie',
+    ];
+
+    protected $casts = [
+        'prix_unitaire_ht_defaut' => 'decimal:2',
     ];
 
     public function user(): BelongsTo
@@ -26,12 +30,8 @@ class CataloguePoste extends Model
         return $this->belongsTo(User::class);
     }
 
-    protected $casts = [
-        'prix_unitaire_ht_defaut' => 'decimal:2',
-    ];
-
-    public function lignes(): HasMany
+    public function projectPrix(): HasMany
     {
-        return $this->hasMany(LignePrixProjet::class, 'poste_id');
+        return $this->hasMany(ProjectPrix::class);
     }
 }

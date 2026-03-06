@@ -13,8 +13,8 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete()->after('id');
         });
 
-        // Add user_id to catalogue_postes
-        Schema::table('catalogue_postes', function (Blueprint $table) {
+        // Add user_id to prix_catalogues
+        Schema::table('prix_catalogues', function (Blueprint $table) {
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete()->after('id');
         });
     }
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->dropColumn('user_id');
         });
 
-        Schema::table('catalogue_postes', function (Blueprint $table) {
+        Schema::table('prix_catalogues', function (Blueprint $table) {
             $table->dropForeign(['user_id']);
             $table->dropColumn('user_id');
         });
