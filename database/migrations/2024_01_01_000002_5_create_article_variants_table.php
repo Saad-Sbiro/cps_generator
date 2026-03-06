@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('article_variants', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('article_id')->constrained('prix_catalogues')->cascadeOnDelete();
-            $table->string('label');                    // e.g. "Variante standard", "Variante marché public"
-            $table->longText('contenu');                // variant-specific content (may include {{placeholders}})
+            $table->string('label');                   
+            $table->longText('contenu');              
             $table->boolean('is_default')->default(false);
             $table->timestamps();
         });

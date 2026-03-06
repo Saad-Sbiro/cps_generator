@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('code')->unique();           // e.g. ART1, RC_ART1
             $table->string('titre');                    // e.g. "Article 1: Objet du marché"
             $table->enum('type', ['CPS_ADMIN', 'CPS_FIN', 'CPS_TECH_COMMUNE', 'RC']);
-            $table->longText('contenu');                // canonical default content / template
+            $table->longText('contenu');   
             $table->integer('ordre_defaut')->default(0);
             $table->timestamps();
         });
