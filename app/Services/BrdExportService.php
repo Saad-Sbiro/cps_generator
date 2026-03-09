@@ -21,9 +21,7 @@ class BrdExportService
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('BRD');
 
-        // ────────────────────────────────────────────────
-        // LOGO & TITLE
-        // ────────────────────────────────────────────────
+
         $logoPath = public_path('opein.png');
         if (file_exists($logoPath)) {
             $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
@@ -56,9 +54,9 @@ class BrdExportService
         ]);
         $sheet->getRowDimension(3)->setRowHeight(25);
 
-        // ────────────────────────────────────────────────
+        
         // HEADER ROW
-        // ────────────────────────────────────────────────
+        
         $headers = ['N°', 'Désignation', 'Unité', 'Quantité', 'PU HT (MAD)', 'Total HT (MAD)'];
         $cols    = ['A', 'B', 'C', 'D', 'E', 'F'];
 
@@ -75,9 +73,9 @@ class BrdExportService
         ]);
         $sheet->getRowDimension($headerRow)->setRowHeight(20);
 
-        // ────────────────────────────────────────────────
+        
         // DATA ROWS
-        // ────────────────────────────────────────────────
+        
         $dataStartRow = $headerRow + 1;
         $currentRow   = $dataStartRow;
         $prevCategory = null;
@@ -133,9 +131,9 @@ class BrdExportService
 
         $lastDataRow = $currentRow - 1;
 
-        // ────────────────────────────────────────────────
+        
         // TOTALS
-        // ────────────────────────────────────────────────
+        
         $totalHtRow  = $currentRow + 1;
         $totalTvaRow = $currentRow + 2;
         $totalTtcRow = $currentRow + 3;
@@ -180,9 +178,9 @@ class BrdExportService
         $sheet->getStyle("F{$totalTtcRow}")->getNumberFormat()->setFormatCode('#,##0.00 "MAD"');
         $sheet->getRowDimension($totalTtcRow)->setRowHeight(22);
 
-        // ────────────────────────────────────────────────
+        
         // COLUMN WIDTHS
-        // ────────────────────────────────────────────────
+        
         $sheet->getColumnDimension('A')->setWidth(6);
         $sheet->getColumnDimension('B')->setWidth(45);
         $sheet->getColumnDimension('C')->setWidth(10);
@@ -193,9 +191,9 @@ class BrdExportService
         // Freeze header
         $sheet->freezePane("A{$dataStartRow}");
 
-        // ────────────────────────────────────────────────
+        
         // SAVE
-        // ────────────────────────────────────────────────
+        
         $filename = 'BRD_' . preg_replace('/[^A-Za-z0-9\-_]/', '_', $projet->reference) . '_' . date('Ymd_His') . '.xlsx';
         $dir      = storage_path('app/exports');
         if (!is_dir($dir)) mkdir($dir, 0755, true);

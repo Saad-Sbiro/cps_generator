@@ -15,13 +15,20 @@ class ExportDocument extends Model
     protected $fillable = [
         'projet_id',
         'type',
+        'disk',
         'filename',
         'path',
+    ];
+
+    protected $attributes = [
+        'disk' => 'local',
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
     ];
+
+    protected $appends = ['download_url'];
 
     public function projet(): BelongsTo
     {
@@ -32,6 +39,4 @@ class ExportDocument extends Model
     {
         return route('exports.download', $this->id, false);
     }
-
-    protected $appends = ['download_url'];
 }

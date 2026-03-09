@@ -30,16 +30,16 @@ class CpsExportService
         $this->phpWord->setDefaultFontSize(10);
 
         $section = $this->phpWord->addSection([
-            'marginTop'    => 1134, // 2cm in twips
+            'marginTop'    => 1134, 
             'marginBottom' => 1134,
-            'marginLeft'   => 1418, // 2.5cm
+            'marginLeft'   => 1418, 
             'marginRight'  => 1134,
         ]);
 
         $this->phpWord->addTitleStyle(1, ['name' => 'Arial', 'size' => 12, 'bold' => true, 'color' => '003366'], ['spaceBefore' => 240, 'spaceAfter' => 120]);
         $this->phpWord->addTitleStyle(2, ['name' => 'Arial', 'size' => 11, 'bold' => true, 'color' => '1a3d6e'], ['spaceBefore' => 120, 'spaceAfter' => 60]);
 
-        // ---------- PAGE DE GARDE ----------
+        //  PAGE DE GARDE 
         $logoPath = public_path('opein.png');
         if (file_exists($logoPath)) {
             $section->addImage($logoPath, [
@@ -58,7 +58,7 @@ class CpsExportService
         $section->addLine(['weight' => 2, 'color' => '003366', 'width' => 450, 'height' => 0]);
         $section->addTextBreak(2);
 
-        // ---------- PROJECT IDENTITY ON COVER ----------
+        //  PROJECT IDENTITY ON COVER 
         $this->addLabelValue($section, 'Référence :', $projet->reference);
         $this->addLabelValue($section, 'Intitulé :', $projet->intitule);
         $this->addLabelValue($section, 'Date :', $projet->date_creation?->format('d/m/Y') ?? '');
@@ -76,16 +76,16 @@ class CpsExportService
         }
         $section->addPageBreak();
 
-        // ---------- TOC (SOMMAIRE) ----------
+        //  TOC (SOMMAIRE) 
         $section->addText('SOMMAIRE', $this->styleTitle, $this->paraCenter);
         $section->addTextBreak(1);
         $section->addTOC(['name' => 'Arial', 'size' => 11], ['name' => 'Arial', 'size' => 10], 1, 3);
         $section->addPageBreak();
 
-        // ---------- CAHIER DES CLAUSES ADMINISTRATIVES ----------
+        //  CAHIER DES CLAUSES ADMINISTRATIVES 
         $section->addTitle('CAHIER DES CLAUSES ADMINISTRATIVES', 1);
 
-        // ---------- CPS_ADMIN + CPS_FIN SECTIONS ----------
+        //  CPS_ADMIN + CPS_FIN SECTIONS 
         $adminSections = $projet->projectArticles
             ->filter(fn($s) => in_array($s->article->type, ['CPS_ADMIN', 'CPS_FIN']))
             ->sortBy('ordre');
@@ -96,7 +96,7 @@ class CpsExportService
             $section->addTextBreak(1);
         }
 
-        // ---------- PARTIE COMMUNE TECHNIQUE ----------
+        //  PARTIE COMMUNE TECHNIQUE 
         $techSections = $projet->projectArticles
             ->filter(fn($s) => $s->article->type === 'CPS_TECH_COMMUNE')
             ->sortBy('ordre');
@@ -110,7 +110,7 @@ class CpsExportService
             }
         }
 
-        // ---------- DESCRIPTIONS PAR PRIX ----------
+        //  DESCRIPTIONS PAR PRIX 
         if ($projet->projectPrix->isNotEmpty()) {
             $section->addPageBreak();
             $section->addTitle('ARTICLE 56 – DESCRIPTION TECHNIQUE', 1);
@@ -125,11 +125,11 @@ class CpsExportService
                     $this->paraNormal
                 );
                 $section->addText("Unité : {$poste->unite}", $this->styleBody, $this->paraNormal);
-                $this->addMultilineText($section, $poste->description_technique);
+                $this->addMultilineText($section, $poste->description_technique ?? '');
             }
         }
 
-        // ---------- BRD SUMMARY TABLE ----------
+        //  BRD SUMMARY TABLE 
         if ($projet->inclure_brd_dans_cps && $projet->projectPrix->isNotEmpty()) {
             $section->addPageBreak();
             $section->addTitle('ARTICLE 57 – BORDEREAU DES PRIX ET DETAIL ESTIMATIF', 1);
@@ -186,7 +186,7 @@ class CpsExportService
             $table->addCell(1300, $blueBg)->addText(number_format($totalTtc, 2, ',', ' ') . ' MAD', ['name' => 'Arial', 'size' => 10, 'bold' => true, 'color' => '003366'], ['alignment' => 'right']);
         }
 
-        // ---------- FINANCIAL CLAUSES ----------
+        //  FINANCIAL CLAUSES 
         $section->addTextBreak(2);
         $section->addText('CONDITIONS FINANCIÈRES', $this->styleHeading, $this->paraHeading);
         $section->addText("Taux de TVA applicable : {$projet->taux_tva}%", $this->styleBody, $this->paraNormal);
@@ -194,7 +194,7 @@ class CpsExportService
         $section->addText('Montant TVA : ' . number_format($projet->total_tva, 2, ',', ' ') . ' MAD', $this->styleBody, $this->paraNormal);
         $section->addText('Montant TOTAL TTC : ' . number_format($projet->total_ttc, 2, ',', ' ') . ' MAD', $this->styleLabel, $this->paraNormal);
 
-        // ---------- SAVE ----------
+        //  SAVE 
         $filename = 'CPS_' . preg_replace('/[^A-Za-z0-9\-_]/', '_', $projet->reference) . '_' . date('Ymd_His') . '.docx';
         $dir      = storage_path('app/exports');
         if (!is_dir($dir)) mkdir($dir, 0755, true);
@@ -205,9 +205,11 @@ class CpsExportService
         return $path;
     }
 
-    private function addMultilineText($section, string $text): void
+    private function addMultilineText($section, ?string $text): void
     {
-        $lines = explode("\n", str_replace("\r\n", "\n", $text));
+        $safeText = (string) ($text ?? '');
+        $lines = explode("\n", str_replace("\r\n", "\n", $safeText));
+
         foreach ($lines as $line) {
             $trimmed = trim($line);
             if ($trimmed === '') {
