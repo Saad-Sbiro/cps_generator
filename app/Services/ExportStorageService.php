@@ -24,7 +24,11 @@ class ExportStorageService
         }
 
         try {
-            Storage::disk($disk)->put($storagePath, $stream);
+            $stored = Storage::disk($disk)->put($storagePath, $stream);
+
+            if ($stored !== true) {
+                throw new RuntimeException("Échec d'envoi du fichier vers le stockage [{$disk}].");
+            }
         } finally {
             fclose($stream);
 
@@ -59,11 +63,11 @@ class ExportStorageService
 
         $disk = $export->disk ?: 'local';
 
-        if (!Storage::disk($disk)->exists($export->path)) {
+        try {
+            return Storage::disk($disk)->download($export->path, $export->filename, ['Content-Type' => $mimeType]);
+        } catch (\Throwable $e) {
             abort(404, 'Fichier introuvable');
         }
-
-        return Storage::disk($disk)->download($export->path, $export->filename, ['Content-Type' => $mimeType]);
     }
 
     public function delete(ExportDocument $export): void
@@ -78,8 +82,10 @@ class ExportStorageService
 
         $disk = $export->disk ?: 'local';
 
-        if (Storage::disk($disk)->exists($export->path)) {
+        try {
             Storage::disk($disk)->delete($export->path);
+        } catch (\Throwable $e) {
+            // ignore storage delete errors
         }
     }
 

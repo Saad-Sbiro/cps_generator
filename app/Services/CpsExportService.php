@@ -15,11 +15,14 @@ class CpsExportService
     private array $styleTitle    = ['name' => 'Arial', 'size' => 16, 'bold' => true, 'color' => '003366'];
     private array $styleHeading  = ['name' => 'Arial', 'size' => 13, 'bold' => true, 'color' => '1a3d6e'];
     private array $styleH3       = ['name' => 'Arial', 'size' => 11, 'bold' => true, 'color' => '333333'];
-    private array $styleBody     = ['name' => 'Arial', 'size' => 10];
-    private array $styleLabel    = ['name' => 'Arial', 'size' => 10, 'bold' => true];
-    private array $paraCenter    = ['alignment' => 'center'];
-    private array $paraNormal    = ['alignment' => 'left', 'spaceBefore' => 80, 'spaceAfter' => 80];
-    private array $paraHeading   = ['alignment' => 'left', 'spaceBefore' => 200, 'spaceAfter' => 100];
+    private array $styleBody       = ['name' => 'Arial', 'size' => 10];
+    private array $styleLabel      = ['name' => 'Arial', 'size' => 10, 'bold' => true];
+    private array $styleCoverLine  = ['name' => 'Arial', 'size' => 14, 'bold' => true, 'color' => '003366'];
+    private array $paraCenter      = ['alignment' => 'center'];
+    private array $paraNormal      = ['alignment' => 'left', 'spaceBefore' => 80, 'spaceAfter' => 80];
+    private array $paraHeading     = ['alignment' => 'left', 'spaceBefore' => 200, 'spaceAfter' => 100];
+    private array $paraCover       = ['alignment' => 'center', 'spaceBefore' => 120, 'spaceAfter' => 120];
+    private int $coverImageWidth   = 435;
 
     public function generate(Projet $projet): string
     {
@@ -30,9 +33,9 @@ class CpsExportService
         $this->phpWord->setDefaultFontSize(10);
 
         $section = $this->phpWord->addSection([
-            'marginTop'    => 1134, 
+            'marginTop'    => 534,
             'marginBottom' => 1134,
-            'marginLeft'   => 1418, 
+            'marginLeft'   => 1418,
             'marginRight'  => 1134,
         ]);
 
@@ -40,12 +43,10 @@ class CpsExportService
         $this->phpWord->addTitleStyle(2, ['name' => 'Arial', 'size' => 11, 'bold' => true, 'color' => '1a3d6e'], ['spaceBefore' => 120, 'spaceAfter' => 60]);
 
         //  PAGE DE GARDE 
-        $logoPath = public_path('logo.png');
-        if (file_exists($logoPath)) {
-            $section->addImage($logoPath, [
-                'width' => 120,
-                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
-            ]);
+        $logoPath = $this->resolveLogoPath();
+        if ($logoPath !== null) {
+            $coverRun = $section->addTextRun(['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+            $coverRun->addImage($logoPath, ['width' => $this->coverImageWidth]);
             $section->addTextBreak(2);
         }
 
@@ -54,6 +55,7 @@ class CpsExportService
         
         $section->addText('CAHIER DES PRESCRIPTIONS SPÉCIALES', ['name' => 'Arial', 'size' => 24, 'bold' => true, 'color' => '003366'], $this->paraCenter);
         $section->addText('(CPS)', ['name' => 'Arial', 'size' => 18, 'bold' => true, 'color' => '003366'], $this->paraCenter);
+        $section->addText('STYLE_BUILD_CPS_20260309', ['name' => 'Arial', 'size' => 11, 'bold' => true, 'color' => 'CC0000'], $this->paraCenter);
         $section->addTextBreak(1);
         $section->addLine(['weight' => 2, 'color' => '003366', 'width' => 450, 'height' => 0]);
         $section->addTextBreak(2);
@@ -132,7 +134,7 @@ class CpsExportService
         //  BRD SUMMARY TABLE 
         if ($projet->inclure_brd_dans_cps && $projet->projectPrix->isNotEmpty()) {
             $section->addPageBreak();
-            $section->addTitle('ARTICLE 57 – BORDEREAU DES PRIX ET DETAIL ESTIMATIF', 1);
+            $section->addTitle('ARTICLE 57 - BORDEREAU DES PRIX ET DETAIL ESTIMATIF', 1);
 
             $tableStyle = [
                 'borderSize'  => 6,
@@ -195,7 +197,7 @@ class CpsExportService
         $section->addText('Montant TOTAL TTC : ' . number_format($projet->total_ttc, 2, ',', ' ') . ' MAD', $this->styleLabel, $this->paraNormal);
 
         //  SAVE 
-        $filename = 'CPS_' . preg_replace('/[^A-Za-z0-9\-_]/', '_', $projet->reference) . '_' . date('Ymd_His') . '.docx';
+        $filename = 'CPS_V2_' . preg_replace('/[^A-Za-z0-9\-_]/', '_', $projet->reference) . '_' . date('Ymd_His') . '.docx';
         $dir      = storage_path('app/exports');
         if (!is_dir($dir)) mkdir($dir, 0755, true);
         $path = $dir . '/' . $filename;
@@ -222,8 +224,24 @@ class CpsExportService
 
     private function addLabelValue($section, string $label, string $value): void
     {
-        $textRun = $section->addTextRun($this->paraNormal);
-        $textRun->addText($label . ' ', $this->styleLabel);
-        $textRun->addText($value, $this->styleBody);
+        $line = trim($label . ' ' . $value);
+        $run = $section->addTextRun($this->paraCover);
+        $run->addText($line, $this->styleCoverLine);
+    }
+
+    private function resolveLogoPath(): ?string
+    {
+        $candidates = [
+            public_path('logo.png'),
+
+        ];
+
+        foreach ($candidates as $path) {
+            if (is_string($path) && file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 }
