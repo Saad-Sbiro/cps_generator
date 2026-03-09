@@ -40,7 +40,7 @@ class CpsExportService
         $this->phpWord->addTitleStyle(2, ['name' => 'Arial', 'size' => 11, 'bold' => true, 'color' => '1a3d6e'], ['spaceBefore' => 120, 'spaceAfter' => 60]);
 
         //  PAGE DE GARDE 
-        $logoPath = public_path('opein.png');
+        $logoPath = public_path('logo.png');
         if (file_exists($logoPath)) {
             $section->addImage($logoPath, [
                 'width' => 120,
@@ -113,7 +113,7 @@ class CpsExportService
         //  DESCRIPTIONS PAR PRIX 
         if ($projet->projectPrix->isNotEmpty()) {
             $section->addPageBreak();
-            $section->addTitle('ARTICLE 56 – DESCRIPTION TECHNIQUE', 1);
+            $section->addTitle('ARTICLE 56 - DESCRIPTION TECHNIQUE', 1);
             $section->addLine(['weight' => 1, 'color' => '999999', 'width' => 450, 'height' => 0]);
 
             foreach ($projet->projectPrix as $ligne) {

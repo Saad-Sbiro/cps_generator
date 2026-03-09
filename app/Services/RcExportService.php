@@ -33,7 +33,7 @@ class RcExportService
         ]);
 
         //  PAGE DE GARDE 
-        $logoPath = public_path('opein.png');
+        $logoPath = public_path('logo.png');
         if (file_exists($logoPath)) {
             $section->addImage($logoPath, [
                 'width' => 120,

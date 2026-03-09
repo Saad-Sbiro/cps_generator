@@ -22,7 +22,7 @@ class BrdExportService
         $sheet->setTitle('BRD');
 
 
-        $logoPath = public_path('opein.png');
+        $logoPath = public_path('logo.png');
         if (file_exists($logoPath)) {
             $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
             $drawing->setName('Logo');
