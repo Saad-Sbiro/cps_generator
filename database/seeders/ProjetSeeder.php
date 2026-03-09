@@ -16,8 +16,8 @@ class ProjetSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create (or reuse) the demo user
-        $demoUser = User::firstOrCreate(
+        // Keep a demo user for login/testing, but the seeded project itself must stay shared.
+        User::firstOrCreate(
             ['email' => 'demo@cps-generator.ma'],
             [
                 'name'     => 'Utilisateur Demo',
@@ -25,23 +25,20 @@ class ProjetSeeder extends Seeder
             ]
         );
 
-        // Skip if demo project already owned by demo user
-        if (Projet::where('reference', 'PRJ-2025-001')->where('user_id', $demoUser->id)->exists()) {
-            return;
-        }
-
-        $projet = Projet::create([
-            'user_id'              => $demoUser->id,
-            'reference'            => 'PRJ-2025-001',
-            'intitule'             => 'Rehabilitation et amenagement du siege social - Extension Batiment B',
-            'date_creation'        => '2025-06-01',
-            'taux_tva'             => 20.00,
-            'inclure_brd_dans_cps' => true,
-            'maitre_ouvrage'       => 'Ministere de l\'Equipement et de l\'Eau - Delegation Regionale de Rabat',
-            'objet_marche'         => 'Travaux de rehabilitation et d\'amenagement du siege social, extension batiment B',
-            'lieu'                 => 'Rabat, Maroc',
-            'delai_execution'      => '6 mois',
-        ]);
+        $projet = Projet::updateOrCreate(
+            ['reference' => 'PRJ-2025-001'],
+            [
+                'user_id'              => null,
+                'intitule'             => 'Rehabilitation et amenagement du siege social - Extension Batiment B',
+                'date_creation'        => '2025-06-01',
+                'taux_tva'             => 20.00,
+                'inclure_brd_dans_cps' => true,
+                'maitre_ouvrage'       => 'Ministere de l\'Equipement et de l\'Eau - Delegation Regionale de Rabat',
+                'objet_marche'         => 'Travaux de rehabilitation et d\'amenagement du siege social, extension batiment B',
+                'lieu'                 => 'Rabat, Maroc',
+                'delai_execution'      => '6 mois',
+            ]
+        );
 
         // ---------- Attach articles ----------
         $articleCodes = [];
@@ -71,13 +68,17 @@ class ProjetSeeder extends Seeder
                 $baseContenu
             );
 
-            ProjectArticle::create([
-                'projet_id'          => $projet->id,
-                'article_id'         => $article->id,
-                'article_variant_id' => $variant ? $variant->id : null,
-                'ordre'              => $ordre++,
-                'contenu_final'      => $contenu,
-            ]);
+            ProjectArticle::updateOrCreate(
+                [
+                    'projet_id'  => $projet->id,
+                    'article_id' => $article->id,
+                ],
+                [
+                    'article_variant_id' => $variant ? $variant->id : null,
+                    'ordre'              => $ordre++,
+                    'contenu_final'      => $contenu,
+                ]
+            );
         }
 
         // ---------- Attach prix ----------
@@ -96,14 +97,18 @@ class ProjetSeeder extends Seeder
 
             if (!$catalogueArticle) continue;
 
-            ProjectPrix::create([
-                'projet_id'            => $projet->id,
-                'prix_catalogue_id' => $catalogueArticle->id,
-                'quantite'             => $item['qte'],
-                'prix_unitaire_ht'     => $catalogueArticle->prix_unitaire_ht_defaut,
-                'ordre'                => $item['ordre'],
-                'numero_prix'          => $numero++,
-            ]);
+            ProjectPrix::updateOrCreate(
+                [
+                    'projet_id'         => $projet->id,
+                    'prix_catalogue_id' => $catalogueArticle->id,
+                ],
+                [
+                    'quantite'         => $item['qte'],
+                    'prix_unitaire_ht' => $catalogueArticle->prix_unitaire_ht_defaut,
+                    'ordre'            => $item['ordre'],
+                    'numero_prix'      => $numero++,
+                ]
+            );
         }
     }
 }
