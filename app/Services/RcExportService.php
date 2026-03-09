@@ -19,7 +19,7 @@ class RcExportService
 
     public function generate(Projet $projet): string
     {
-        $projet->load(['sections.sectionModele']);
+        $projet->load(['projectArticles.article']);
 
         $phpWord = new PhpWord();
         $phpWord->setDefaultFontName('Arial');
@@ -64,13 +64,13 @@ class RcExportService
         $section->addPageBreak();
 
         // ---------- RC SECTIONS ----------
-        $rcSections = $projet->sections
-            ->filter(fn($s) => $s->sectionModele->type === 'RC')
+        $rcSections = $projet->projectArticles
+            ->filter(fn($s) => $s->article->type === 'RC')
             ->sortBy('ordre');
 
         if ($rcSections->isNotEmpty()) {
             foreach ($rcSections as $sp) {
-                $section->addText($sp->sectionModele->titre, $this->styleHeading, $this->paraHeading);
+                $section->addText($sp->article->titre, $this->styleHeading, $this->paraHeading);
                 $this->addMultilineText($section, $sp->contenu_final);
                 $section->addTextBreak(1);
             }

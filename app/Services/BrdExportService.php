@@ -14,8 +14,8 @@ class BrdExportService
 {
     public function generate(Projet $projet): string
     {
-        $projet->load(['lignes.cataloguePoste']);
-        $lignes = $projet->lignes;
+        $projet->load(['projectPrix.prixCatalogue']);
+        $projectPrix = $projet->projectPrix;
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -82,8 +82,8 @@ class BrdExportService
         $currentRow   = $dataStartRow;
         $prevCategory = null;
 
-        foreach ($lignes as $ligne) {
-            $poste    = $ligne->cataloguePoste;
+        foreach ($projectPrix as $ligne) {
+            $poste    = $ligne->prixCatalogue;
             $category = $poste->categorie ?? 'Général';
 
             // Category group header

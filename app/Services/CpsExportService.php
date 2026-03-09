@@ -23,7 +23,7 @@ class CpsExportService
 
     public function generate(Projet $projet): string
     {
-        $projet->load(['lignes.cataloguePoste', 'sections.sectionModele']);
+        $projet->load(['projectPrix.prixCatalogue', 'projectArticles.article']);
 
         $this->phpWord = new PhpWord();
         $this->phpWord->setDefaultFontName('Arial');
@@ -86,38 +86,38 @@ class CpsExportService
         $section->addTitle('CAHIER DES CLAUSES ADMINISTRATIVES', 1);
 
         // ---------- CPS_ADMIN + CPS_FIN SECTIONS ----------
-        $adminSections = $projet->sections
-            ->filter(fn($s) => in_array($s->sectionModele->type, ['CPS_ADMIN', 'CPS_FIN']))
+        $adminSections = $projet->projectArticles
+            ->filter(fn($s) => in_array($s->article->type, ['CPS_ADMIN', 'CPS_FIN']))
             ->sortBy('ordre');
 
         foreach ($adminSections as $sp) {
-            $section->addTitle($sp->sectionModele->titre, 2);
+            $section->addTitle($sp->article->titre, 2);
             $this->addMultilineText($section, $sp->contenu_final);
             $section->addTextBreak(1);
         }
 
         // ---------- PARTIE COMMUNE TECHNIQUE ----------
-        $techSections = $projet->sections
-            ->filter(fn($s) => $s->sectionModele->type === 'CPS_TECH_COMMUNE')
+        $techSections = $projet->projectArticles
+            ->filter(fn($s) => $s->article->type === 'CPS_TECH_COMMUNE')
             ->sortBy('ordre');
 
         if ($techSections->isNotEmpty()) {
             $section->addTitle('PARTIE COMMUNE TECHNIQUE', 1);
             foreach ($techSections as $sp) {
-                $section->addTitle($sp->sectionModele->titre, 2);
+                $section->addTitle($sp->article->titre, 2);
                 $this->addMultilineText($section, $sp->contenu_final);
                 $section->addTextBreak(1);
             }
         }
 
         // ---------- DESCRIPTIONS PAR PRIX ----------
-        if ($projet->lignes->isNotEmpty()) {
+        if ($projet->projectPrix->isNotEmpty()) {
             $section->addPageBreak();
             $section->addTitle('ARTICLE 56 – DESCRIPTION TECHNIQUE', 1);
             $section->addLine(['weight' => 1, 'color' => '999999', 'width' => 450, 'height' => 0]);
 
-            foreach ($projet->lignes as $ligne) {
-                $poste = $ligne->cataloguePoste;
+            foreach ($projet->projectPrix as $ligne) {
+                $poste = $ligne->prixCatalogue;
                 $section->addTextBreak(1);
                 $section->addText(
                     "Prix N°{$ligne->numero_prix} : {$poste->designation}",
@@ -130,7 +130,7 @@ class CpsExportService
         }
 
         // ---------- BRD SUMMARY TABLE ----------
-        if ($projet->inclure_brd_dans_cps && $projet->lignes->isNotEmpty()) {
+        if ($projet->inclure_brd_dans_cps && $projet->projectPrix->isNotEmpty()) {
             $section->addPageBreak();
             $section->addTitle('ARTICLE 57 – BORDEREAU DES PRIX ET DETAIL ESTIMATIF', 1);
 
@@ -155,11 +155,11 @@ class CpsExportService
             $table->addCell(1200, $headerStyle)->addText('PU HT (MAD)', $headerFont, ['alignment' => 'right']);
             $table->addCell(1300, $headerStyle)->addText('Total HT (MAD)', $headerFont, ['alignment' => 'right']);
 
-            foreach ($projet->lignes as $ligne) {
+            foreach ($projet->projectPrix as $ligne) {
                 $table->addRow(300);
                 $table->addCell(500)->addText((string)$ligne->numero_prix, $this->styleBody, ['alignment' => 'center']);
-                $table->addCell(3500)->addText($ligne->cataloguePoste->designation, $this->styleBody);
-                $table->addCell(700)->addText($ligne->cataloguePoste->unite, $this->styleBody, ['alignment' => 'center']);
+                $table->addCell(3500)->addText($ligne->prixCatalogue->designation, $this->styleBody);
+                $table->addCell(700)->addText($ligne->prixCatalogue->unite, $this->styleBody, ['alignment' => 'center']);
                 $table->addCell(800)->addText(number_format((float)$ligne->quantite, 2, ',', ' '), $this->styleBody, ['alignment' => 'right']);
                 $table->addCell(1200)->addText(number_format((float)$ligne->prix_unitaire_ht, 2, ',', ' '), $this->styleBody, ['alignment' => 'right']);
                 $table->addCell(1300)->addText(number_format((float)$ligne->total_ht, 2, ',', ' '), $this->styleBody, ['alignment' => 'right']);
