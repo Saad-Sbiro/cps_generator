@@ -51,7 +51,7 @@ class BrdExportService
         $projectLines = [
             'Référence : ' . (string) $projet->reference,
             'Intitulé : ' . (string) $projet->intitule,
-            'Date : ' . ($projet->date_creation ? $projet->date_creation->format('d/m/Y') : ''),
+            'Date : ' . ($projet->date_creation ? \Carbon\Carbon::parse($projet->date_creation)->format('d/m/Y') : ''),
             'Maître d\'ouvrage : ' . (string) ($projet->maitre_ouvrage ?? ''),
             'Objet du marché : ' . (string) ($projet->objet_marche ?? ''),
             'Lieu : ' . (string) ($projet->lieu ?? ''),
