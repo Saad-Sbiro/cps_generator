@@ -1,0 +1,79 @@
+
+POST http://localhost:8000/api/auth/register
+
+
+{
+    "name": "User A",
+    "email": "userA@example.com",
+    "password": "password",
+    "password_confirmation": "password"
+}
+
+
+POST http://localhost:8000/api/auth/register
+
+
+{
+    "name": "User B",
+    "email": "userB@example.com",
+    "password": "password",
+    "password_confirmation": "password"
+}
+
+
+
+
+
+POST http://localhost:8000/api/projets
+
+
+{
+    "reference": "REF-2026-X",
+    "intitule": "My Top Secret Project",
+    "date_creation": "2026-03-13",
+    "taux_tva": 20,
+    "inclure_brd_dans_cps": false
+}
+
+
+POST http://localhost:8000/api/projets/<PROJECT_UUID>/invitations
+
+
+{
+    "email": "userB@example.com",
+    "role": "editor"
+}
+
+GET http://localhost:8000/api/projets/<PROJECT_UUID>/invitations
+
+
+GET http://localhost:8000/api/projet-invitations
+
+
+
+POST http://localhost:8000/api/projet-invitations/<INVITATION_ID>/accept
+
+
+DELETE http://localhost:8000/api/projet-invitations/<INVITATION_ID>/reject
+
+
+
+GET http://localhost:8000/api/projets/<PROJECT_UUID>/collaborators
+
+
+GET http://localhost:8000/api/projets
+
+
+PUT http://localhost:8000/api/projets/<PROJECT_UUID>/collaborators/<USER_B_ID>
+
+
+{
+    "role": "viewer"
+}
+
+
+DELETE http://localhost:8000/api/projets/<PROJECT_UUID>/collaborators/<USER_B_ID>
+
+
+DELETE http://localhost:8000/api/projets/<PROJECT_UUID>
+

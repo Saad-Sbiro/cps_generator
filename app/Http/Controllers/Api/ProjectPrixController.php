@@ -8,17 +8,22 @@ use App\Models\ProjectPrix;
 use App\Models\Projet;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class ProjectPrixController extends Controller
 {
     public function index(Projet $projet): JsonResponse
     {
+        Gate::authorize('view', $projet);
+
         $lignes = $projet->projectPrix()->with('prixCatalogue')->get();
         return response()->json($lignes);
     }
 
     public function store(Request $request, Projet $projet): JsonResponse
     {
+        Gate::authorize('update', $projet);
+
         $validated = $request->validate([
             'prix_catalogue_id' => 'required|exists:prix_catalogues,id',
             'quantite'             => 'required|numeric|min:0',
@@ -48,6 +53,7 @@ class ProjectPrixController extends Controller
 
     public function update(Request $request, Projet $projet, ProjectPrix $prix): JsonResponse
     {
+        Gate::authorize('update', $projet);
         $this->authorize_ligne($projet, $prix);
 
         $validated = $request->validate([
@@ -64,13 +70,17 @@ class ProjectPrixController extends Controller
 
     public function destroy(Projet $projet, ProjectPrix $prix): JsonResponse
     {
+        Gate::authorize('update', $projet);
         $this->authorize_ligne($projet, $prix);
+
         $prix->delete();
         return response()->json(null, 204);
     }
 
     public function reorder(Request $request, Projet $projet): JsonResponse
     {
+        Gate::authorize('update', $projet);
+
         $validated = $request->validate([
             'order'   => 'required|array',
             'order.*' => 'uuid|exists:project_prix,id',
@@ -89,7 +99,6 @@ class ProjectPrixController extends Controller
     {
         if ($prix->projet_id !== $projet->id) {
             abort(403, 'Prix item does not belong to this project');
-            $prix->delete();
         }
     }
 }

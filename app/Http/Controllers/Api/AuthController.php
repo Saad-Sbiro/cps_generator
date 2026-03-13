@@ -23,8 +23,14 @@ class AuthController extends Controller
             'name'     => $validated['name'],
             'email'    => strtolower(trim($validated['email'])),
             'password' => Hash::make($validated['password']),
-            'status' => 'you have been registered successfully!',
         ]);
+
+        // ── Auto-accept any pending project invitations for this email ──
+        $pendingInvitations = \App\Models\ProjetInvitation::where('email', strtolower($user->email))->get();
+        foreach ($pendingInvitations as $invitation) {
+            $invitation->projet->collaborators()->attach($user->id, ['role' => $invitation->role]);
+            $invitation->delete();
+        }
 
         $token = $user->createToken('api-token')->plainTextToken;
 
@@ -66,8 +72,6 @@ class AuthController extends Controller
             ]);
         }
 
-
-
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
@@ -85,6 +89,8 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json($request->user());
+        $user = $request->user();
+
+        return response()->json($user);
     }
 }

@@ -10,6 +10,7 @@ use App\Services\CpsExportService;
 use App\Services\ExportStorageService;
 use App\Services\RcExportService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -24,6 +25,8 @@ class ExportController extends Controller
 
     public function exportCps(Projet $projet): JsonResponse
     {
+        Gate::authorize('view', $projet);
+
         return $this->createExportResponse(
             $projet,
             'CPS_DOCX',
@@ -34,6 +37,8 @@ class ExportController extends Controller
 
     public function exportRc(Projet $projet): JsonResponse
     {
+        Gate::authorize('view', $projet);
+
         return $this->createExportResponse(
             $projet,
             'RC_DOCX',
@@ -44,6 +49,8 @@ class ExportController extends Controller
 
     public function exportBrd(Projet $projet): JsonResponse
     {
+        Gate::authorize('view', $projet);
+
         return $this->createExportResponse(
             $projet,
             'BRD_XLSX',
@@ -59,11 +66,19 @@ class ExportController extends Controller
 
     public function listExports(Projet $projet): JsonResponse
     {
+        Gate::authorize('view', $projet);
+
         return response()->json($projet->exports()->latest()->get());
     }
 
     public function destroy(ExportDocument $export): JsonResponse
     {
+        // Verify the user can access the project this export belongs to
+        $projet = $export->projet;
+        if ($projet) {
+            Gate::authorize('update', $projet);
+        }
+
         $this->storageService->delete($export);
         $export->delete();
 

@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -45,5 +47,56 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /* ── Collaboration Relationships ── */
+
+    /**
+     * Projects this user has been granted access to directly.
+     */
+    public function sharedProjets(): BelongsToMany
+    {
+        return $this->belongsToMany(Projet::class, 'projet_user')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    /**
+     * Check if user has a specific role (or higher) in a project.
+     * Owner (created the project) has all roles implicitly.
+     * Editor can do Editor/Viewer things.
+     */
+    public function hasProjetRole(Projet $projet, string $role): bool
+    {
+        // Owner always has the highest role
+        if ((string) $projet->user_id === (string) $this->id) {
+            return true;
+        }
+
+        $userRole = $this->roleInProjet($projet);
+
+        if (! $userRole) {
+            return false;
+        }
+
+        if ($role === 'viewer') {
+            return in_array($userRole, ['editor', 'viewer']);
+        }
+
+        if ($role === 'editor') {
+            return $userRole === 'editor';
+        }
+
+        return false;
+    }
+
+    /**
+     * Get the explicitly assigned role for a user in a project.
+     * Returns null if not explicitly shared, even if they are the owner.
+     */
+    public function roleInProjet(Projet $projet): ?string
+    {
+        $shared = $this->sharedProjets()->where('projet_id', $projet->id)->first();
+        return $shared ? $shared->pivot->role : null;
     }
 }

@@ -6,23 +6,37 @@ use App\Http\Controllers\Controller;
 use App\Models\Projet;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class ProjetController extends Controller
 {
-    public function index(): JsonResponse
+    /**
+     * List projects owned by the user OR shared with the user.
+     */
+    public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+
         $projets = Projet::withCount('projectPrix as lignes_count')
-            ->where(function ($q) {
-                $q->where('user_id', auth()->id())
-                  ->orWhereNull('user_id');
+            ->where('user_id', $user->id)
+            ->orWhereHas('collaborators', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
             })
-            ->orderByRaw('user_id IS NOT NULL') // Places null (shared) user_id before actual users
+            ->orWhereNull('user_id') // seeded generic projects
+            ->with(['user:id,name,email'])
             ->orderByDesc('created_at')
-            ->get();
+            ->get()
+            ->map(function ($projet) use ($user) {
+                $projet->current_user_role = $user->roleInProjet($projet) ?? (($projet->user_id === $user->id) ? 'owner' : 'viewer');
+                return $projet;
+            });
 
         return response()->json($projets);
     }
 
+    /**
+     * Create a project.
+     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -37,17 +51,24 @@ class ProjetController extends Controller
             'delai_execution'     => 'nullable|string|max:200',
         ]);
 
-        $projet = Projet::create(array_merge($validated, ['user_id' => auth()->id()]));
+        $user = $request->user();
+
+        $projet = Projet::create(array_merge($validated, [
+            'user_id' => $user->id,
+        ]));
+
+        $projet->load('user:id,name,email');
 
         return response()->json($projet, 201);
     }
 
     public function show(Projet $projet): JsonResponse
     {
-        // Allow access if owner or seeded shared project (null user_id)
-        abort_if($projet->user_id !== null && $projet->user_id !== auth()->id(), 403, 'Accès interdit');
+        Gate::authorize('view', $projet);
 
         $projet->load([
+            'user:id,name,email',
+            'collaborators:id,name,email',
             'projectPrix.prixCatalogue',
             'projectArticles.article',
             'projectArticles.variant',
@@ -59,7 +80,7 @@ class ProjetController extends Controller
 
     public function update(Request $request, Projet $projet): JsonResponse
     {
-        abort_if($projet->user_id !== null && $projet->user_id !== auth()->id(), 403, 'Accès interdit');
+        Gate::authorize('update', $projet);
 
         $validated = $request->validate([
             'reference'           => 'sometimes|required|string|max:100|unique:projets,reference,' . $projet->id,
@@ -74,14 +95,15 @@ class ProjetController extends Controller
         ]);
 
         $projet->update($validated);
-        $projet->load(['projectPrix.prixCatalogue', 'projectArticles.article', 'exports']);
+        $projet->load(['user:id,name,email', 'projectPrix.prixCatalogue', 'projectArticles.article', 'exports']);
 
         return response()->json($projet);
     }
 
     public function destroy(Projet $projet): JsonResponse
     {
-        abort_if($projet->user_id !== null && $projet->user_id !== auth()->id(), 403, 'Accès interdit');
+        Gate::authorize('delete', $projet);
+
         $projet->delete();
         return response()->json(null, 204);
     }

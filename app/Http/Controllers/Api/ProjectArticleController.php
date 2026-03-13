@@ -9,17 +9,22 @@ use App\Models\ProjectArticle;
 use App\Models\Projet;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class ProjectArticleController extends Controller
 {
     public function index(Projet $projet): JsonResponse
     {
+        Gate::authorize('view', $projet);
+
         $sections = $projet->projectArticles()->with(['article', 'variant'])->get();
         return response()->json($sections);
     }
 
     public function store(Request $request, Projet $projet): JsonResponse
     {
+        Gate::authorize('update', $projet);
+
         $validated = $request->validate([
             'article_id'         => 'required|exists:articles,id',
             'article_variant_id' => 'nullable|exists:article_variants,id',
@@ -67,6 +72,7 @@ class ProjectArticleController extends Controller
 
     public function update(Request $request, Projet $projet, ProjectArticle $article): JsonResponse
     {
+        Gate::authorize('update', $projet);
         $this->authorize_section($projet, $article);
 
         $validated = $request->validate([
@@ -82,13 +88,17 @@ class ProjectArticleController extends Controller
 
     public function destroy(Projet $projet, ProjectArticle $article): JsonResponse
     {
+        Gate::authorize('update', $projet);
         $this->authorize_section($projet, $article);
+
         $article->delete();
         return response()->json(null, 204);
     }
 
     public function reorder(Request $request, Projet $projet): JsonResponse
     {
+        Gate::authorize('update', $projet);
+
         $validated = $request->validate([
             'order'   => 'required|array',
             'order.*' => 'uuid|exists:project_articles,id',

@@ -36,6 +36,13 @@ class Projet extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function collaborators(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'projet_user')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
     public function projectPrix(): HasMany
     {
         return $this->hasMany(ProjectPrix::class)->orderBy('ordre');
@@ -49,6 +56,11 @@ class Projet extends Model
     public function exports(): HasMany
     {
         return $this->hasMany(ExportDocument::class)->latest();
+    }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(ProjetInvitation::class, 'projet_id', 'id');
     }
 
     public function getTotalHtAttribute(): float
