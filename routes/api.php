@@ -12,7 +12,14 @@ use Illuminate\Support\Facades\Route;
 Route::get('status', function () {
     try {
         \Illuminate\Support\Facades\DB::connection()->getPdo();
-        return response()->json(['status' => 'OK', 'db' => 'Connected']);
+
+        return response()->json([
+            'status' => 'OK',
+            'db' => 'Connected',
+            'build' => 'EXPORT_V2_20260309',
+            'base_path' => base_path(),
+            'brd_service_mtime' => @filemtime(app_path('Services/BrdExportService.php')),
+        ]);
     } catch (\Exception $e) {
         return response()->json(['status' => 'Error', 'db' => 'Disconnected'], 500);
     }

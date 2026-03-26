@@ -23,6 +23,7 @@ class AuthController extends Controller
             'name'     => $validated['name'],
             'email'    => strtolower(trim($validated['email'])),
             'password' => Hash::make($validated['password']),
+            'status' => 'you have been registered successfully!',
         ]);
 
         $token = $user->createToken('api-token')->plainTextToken;

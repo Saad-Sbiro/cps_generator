@@ -21,25 +21,26 @@ class BrdExportService
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('BRD');
 
-        // ────────────────────────────────────────────────
-        // LOGO & TITLE
-        // ────────────────────────────────────────────────
-        $logoPath = public_path('opein.png');
-        if (file_exists($logoPath)) {
+
+        $logoPath = $this->resolveLogoPath();
+        if ($logoPath !== null) {
             $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
             $drawing->setName('Logo');
             $drawing->setDescription('Logo');
             $drawing->setPath($logoPath);
             $drawing->setCoordinates('A1');
-            $drawing->setHeight(60);
-            $drawing->setOffsetX(10);
-            $drawing->setOffsetY(10);
+            $drawing->setHeight(195);
+            $drawing->setWidth(735);
+            $drawing->setOffsetX(20);
+            $drawing->setOffsetY(8);
             $drawing->setWorksheet($sheet);
+        } else {
+            $sheet->setCellValue('A1', 'LOGO_NOT_FOUND');
         }
-        $sheet->getRowDimension(1)->setRowHeight(65);
+        $sheet->getRowDimension(1)->setRowHeight(250);
 
         $sheet->mergeCells('A2:F2');
-        $sheet->setCellValue('A2', 'BORDEREAU DU DÉTAIL ESTIMATIF');
+        $sheet->setCellValue('A2', 'BORDEREAU DU DÉTAIL ESTIMATIF - STYLE_BUILD_BRD_20260309');
         $sheet->getStyle('A2')->applyFromArray([
             'font'      => ['bold' => true, 'size' => 14, 'color' => ['rgb' => 'FFFFFF']],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => '1a3d6e']],
@@ -47,22 +48,35 @@ class BrdExportService
         ]);
         $sheet->getRowDimension(2)->setRowHeight(30);
 
-        $sheet->mergeCells('A3:F3');
-        $sheet->setCellValue('A3', $projet->intitule . ' — Réf. ' . $projet->reference);
-        $sheet->getStyle('A3')->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '1a3d6e']],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => 'dde8f5']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-        ]);
-        $sheet->getRowDimension(3)->setRowHeight(25);
+        $projectLines = [
+            'Référence : ' . (string) $projet->reference,
+            'Intitulé : ' . (string) $projet->intitule,
+            'Date : ' . ($projet->date_creation ? \Carbon\Carbon::parse($projet->date_creation)->format('d/m/Y') : ''),
+            'Maître d\'ouvrage : ' . (string) ($projet->maitre_ouvrage ?? ''),
+            'Objet du marché : ' . (string) ($projet->objet_marche ?? ''),
+            'Lieu : ' . (string) ($projet->lieu ?? ''),
+            'Délai d\'exécution : ' . (string) ($projet->delai_execution ?? ''),
+        ];
 
-        // ────────────────────────────────────────────────
+        $metaRow = 3;
+        foreach ($projectLines as $line) {
+            $sheet->mergeCells("A{$metaRow}:F{$metaRow}");
+            $sheet->setCellValue("A{$metaRow}", $line);
+            $sheet->getStyle("A{$metaRow}:F{$metaRow}")->applyFromArray([
+                'font'      => ['bold' => true, 'size' => 12, 'color' => ['rgb' => '1a3d6e']],
+                'fill'      => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => 'eef4fc']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+                'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'D9E4F2']]],
+            ]);
+            $sheet->getRowDimension($metaRow)->setRowHeight(24);
+            $metaRow++;
+        }
+
         // HEADER ROW
-        // ────────────────────────────────────────────────
         $headers = ['N°', 'Désignation', 'Unité', 'Quantité', 'PU HT (MAD)', 'Total HT (MAD)'];
         $cols    = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-        $headerRow = 5;
+        $headerRow = $metaRow + 1;
         foreach ($headers as $i => $header) {
             $cell = $cols[$i] . $headerRow;
             $sheet->setCellValue($cell, $header);
@@ -75,9 +89,9 @@ class BrdExportService
         ]);
         $sheet->getRowDimension($headerRow)->setRowHeight(20);
 
-        // ────────────────────────────────────────────────
+        
         // DATA ROWS
-        // ────────────────────────────────────────────────
+        
         $dataStartRow = $headerRow + 1;
         $currentRow   = $dataStartRow;
         $prevCategory = null;
@@ -133,9 +147,9 @@ class BrdExportService
 
         $lastDataRow = $currentRow - 1;
 
-        // ────────────────────────────────────────────────
+        
         // TOTALS
-        // ────────────────────────────────────────────────
+        
         $totalHtRow  = $currentRow + 1;
         $totalTvaRow = $currentRow + 2;
         $totalTtcRow = $currentRow + 3;
@@ -180,9 +194,9 @@ class BrdExportService
         $sheet->getStyle("F{$totalTtcRow}")->getNumberFormat()->setFormatCode('#,##0.00 "MAD"');
         $sheet->getRowDimension($totalTtcRow)->setRowHeight(22);
 
-        // ────────────────────────────────────────────────
+        
         // COLUMN WIDTHS
-        // ────────────────────────────────────────────────
+        
         $sheet->getColumnDimension('A')->setWidth(6);
         $sheet->getColumnDimension('B')->setWidth(45);
         $sheet->getColumnDimension('C')->setWidth(10);
@@ -190,13 +204,11 @@ class BrdExportService
         $sheet->getColumnDimension('E')->setWidth(16);
         $sheet->getColumnDimension('F')->setWidth(18);
 
-        // Freeze header
-        $sheet->freezePane("A{$dataStartRow}");
 
-        // ────────────────────────────────────────────────
+        
         // SAVE
-        // ────────────────────────────────────────────────
-        $filename = 'BRD_' . preg_replace('/[^A-Za-z0-9\-_]/', '_', $projet->reference) . '_' . date('Ymd_His') . '.xlsx';
+        
+        $filename = 'BRD_V1_' . preg_replace('/[^A-Za-z0-9\-_]/', '_', $projet->reference) . '_' . date('Ymd_His') . '.xlsx';
         $dir      = storage_path('app/exports');
         if (!is_dir($dir)) mkdir($dir, 0755, true);
         $path = $dir . '/' . $filename;
@@ -204,5 +216,21 @@ class BrdExportService
         (new Xlsx($spreadsheet))->save($path);
 
         return $path;
+    }
+
+    private function resolveLogoPath(): ?string
+    {
+        $candidates = [
+            public_path('logo.png'),
+
+        ];
+
+        foreach ($candidates as $path) {
+            if (is_string($path) && file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 }

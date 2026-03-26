@@ -89,6 +89,7 @@ class ProjectPrixController extends Controller
     {
         if ($prix->projet_id !== $projet->id) {
             abort(403, 'Prix item does not belong to this project');
+            $prix->delete();
         }
     }
 }

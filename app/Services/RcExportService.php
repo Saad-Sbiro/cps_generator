@@ -10,12 +10,15 @@ class RcExportService
 {
     private array $styleTitle   = ['name' => 'Arial', 'size' => 16, 'bold' => true, 'color' => '6b2c00'];
     private array $styleHeading = ['name' => 'Arial', 'size' => 12, 'bold' => true, 'color' => '6b2c00'];
-    private array $styleH3      = ['name' => 'Arial', 'size' => 11, 'bold' => true, 'color' => '333333'];
-    private array $styleBody    = ['name' => 'Arial', 'size' => 10];
-    private array $styleLabel   = ['name' => 'Arial', 'size' => 10, 'bold' => true];
-    private array $paraCenter   = ['alignment' => 'center'];
-    private array $paraNormal   = ['alignment' => 'left', 'spaceBefore' => 80, 'spaceAfter' => 80];
-    private array $paraHeading  = ['alignment' => 'left', 'spaceBefore' => 200, 'spaceAfter' => 100];
+    private array $styleH3         = ['name' => 'Arial', 'size' => 11, 'bold' => true, 'color' => '333333'];
+    private array $styleBody       = ['name' => 'Arial', 'size' => 10];
+    private array $styleLabel      = ['name' => 'Arial', 'size' => 10, 'bold' => true];
+    private array $styleCoverLine  = ['name' => 'Arial', 'size' => 14, 'bold' => true, 'color' => '6b2c00'];
+    private array $paraCenter      = ['alignment' => 'center'];
+    private array $paraNormal      = ['alignment' => 'left', 'spaceBefore' => 80, 'spaceAfter' => 80];
+    private array $paraHeading     = ['alignment' => 'left', 'spaceBefore' => 200, 'spaceAfter' => 100];
+    private array $paraCover       = ['alignment' => 'center', 'spaceBefore' => 120, 'spaceAfter' => 120];
+    private int $coverImageWidth   = 435;
 
     public function generate(Projet $projet): string
     {
@@ -32,13 +35,11 @@ class RcExportService
             'marginRight'  => 1134,
         ]);
 
-        // ---------- PAGE DE GARDE ----------
-        $logoPath = public_path('opein.png');
-        if (file_exists($logoPath)) {
-            $section->addImage($logoPath, [
-                'width' => 120,
-                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
-            ]);
+        //  PAGE DE GARDE 
+        $logoPath = $this->resolveLogoPath();
+        if ($logoPath !== null) {
+            $coverRun = $section->addTextRun(['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+            $coverRun->addImage($logoPath, ['width' => $this->coverImageWidth]);
             $section->addTextBreak(2);
         }
 
@@ -47,11 +48,12 @@ class RcExportService
 
         $section->addText('RÈGLEMENT DE CONSULTATION', ['name' => 'Arial', 'size' => 24, 'bold' => true, 'color' => '6b2c00'], $this->paraCenter);
         $section->addText('(RC)', ['name' => 'Arial', 'size' => 18, 'bold' => true, 'color' => '6b2c00'], $this->paraCenter);
+        $section->addText('STYLE_BUILD_RC_20260309', ['name' => 'Arial', 'size' => 11, 'bold' => true, 'color' => 'CC0000'], $this->paraCenter);
         $section->addTextBreak(1);
         $section->addLine(['weight' => 2, 'color' => '6b2c00', 'width' => 450, 'height' => 0]);
         $section->addTextBreak(2);
 
-        // ---------- PROJECT IDENTITY ON COVER ----------
+        //  PROJECT IDENTITY ON COVER 
         $this->addLabelValue($section, 'Référence :', $projet->reference);
         $this->addLabelValue($section, 'Intitulé :', $projet->intitule);
         $this->addLabelValue($section, 'Date :', $projet->date_creation?->format('d/m/Y') ?? '');
@@ -61,9 +63,15 @@ class RcExportService
         if ($projet->objet_marche) {
             $this->addLabelValue($section, 'Objet du marché :', $projet->objet_marche);
         }
+        if ($projet->lieu) {
+            $this->addLabelValue($section, 'Lieu :', $projet->lieu);
+        }
+        if ($projet->delai_execution) {
+            $this->addLabelValue($section, 'Délai d\'exécution :', $projet->delai_execution);
+        }
         $section->addPageBreak();
 
-        // ---------- RC SECTIONS ----------
+        //  RC SECTIONS 
         $rcSections = $projet->projectArticles
             ->filter(fn($s) => $s->article->type === 'RC')
             ->sortBy('ordre');
@@ -92,8 +100,8 @@ class RcExportService
             }
         }
 
-        // ---------- SAVE ----------
-        $filename = 'RC_' . preg_replace('/[^A-Za-z0-9\-_]/', '_', $projet->reference) . '_' . date('Ymd_His') . '.docx';
+        //  SAVE 
+        $filename = 'RC_V2_' . preg_replace('/[^A-Za-z0-9\-_]/', '_', $projet->reference) . '_' . date('Ymd_His') . '.docx';
         $dir      = storage_path('app/exports');
         if (!is_dir($dir)) mkdir($dir, 0755, true);
         $path = $dir . '/' . $filename;
@@ -103,9 +111,11 @@ class RcExportService
         return $path;
     }
 
-    private function addMultilineText($section, string $text): void
+    private function addMultilineText($section, ?string $text): void
     {
-        $lines = explode("\n", str_replace("\r\n", "\n", $text));
+        $safeText = (string) ($text ?? '');
+        $lines = explode("\n", str_replace("\r\n", "\n", $safeText));
+
         foreach ($lines as $line) {
             $trimmed = trim($line);
             if ($trimmed === '') {
@@ -118,8 +128,23 @@ class RcExportService
 
     private function addLabelValue($section, string $label, string $value): void
     {
-        $textRun = $section->addTextRun($this->paraNormal);
-        $textRun->addText($label . ' ', $this->styleLabel);
-        $textRun->addText($value, $this->styleBody);
+        $line = trim($label . ' ' . $value);
+        $run = $section->addTextRun($this->paraCover);
+        $run->addText($line, $this->styleCoverLine);
+    }
+
+    private function resolveLogoPath(): ?string
+    {
+        $candidates = [
+            public_path('logo.png'),
+        ];
+
+        foreach ($candidates as $path) {
+            if (is_string($path) && file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 }

@@ -7,93 +7,54 @@ use App\Models\ExportDocument;
 use App\Models\Projet;
 use App\Services\BrdExportService;
 use App\Services\CpsExportService;
+use App\Services\ExportStorageService;
 use App\Services\RcExportService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExportController extends Controller
 {
     public function __construct(
         private CpsExportService $cpsService,
-        private RcExportService  $rcService,
+        private RcExportService $rcService,
         private BrdExportService $brdService,
+        private ExportStorageService $storageService,
     ) {}
 
     public function exportCps(Projet $projet): JsonResponse
     {
-        $path     = $this->cpsService->generate($projet);
-        $filename = basename($path);
-
-        $doc = ExportDocument::create([
-            'projet_id' => $projet->id,
-            'type'      => 'CPS_DOCX',
-            'filename'  => $filename,
-            'path'      => $path,
-        ]);
-
-        return response()->json([
-            'message'      => 'CPS généré avec succès',
-            'filename'     => $filename,
-            'download_url' => route('exports.download', $doc->id, false),
-            'export'       => $doc,
-        ]);
+        return $this->createExportResponse(
+            $projet,
+            'CPS_DOCX',
+            $this->cpsService->generate($projet),
+            'CPS généré avec succès',
+        );
     }
 
     public function exportRc(Projet $projet): JsonResponse
     {
-        $path     = $this->rcService->generate($projet);
-        $filename = basename($path);
-
-        $doc = ExportDocument::create([
-            'projet_id' => $projet->id,
-            'type'      => 'RC_DOCX',
-            'filename'  => $filename,
-            'path'      => $path,
-        ]);
-
-        return response()->json([
-            'message'      => 'RC généré avec succès',
-            'filename'     => $filename,
-            'download_url' => route('exports.download', $doc->id, false),
-            'export'       => $doc,
-        ]);
+        return $this->createExportResponse(
+            $projet,
+            'RC_DOCX',
+            $this->rcService->generate($projet),
+            'RC généré avec succès',
+        );
     }
 
     public function exportBrd(Projet $projet): JsonResponse
     {
-        $path     = $this->brdService->generate($projet);
-        $filename = basename($path);
-
-        $doc = ExportDocument::create([
-            'projet_id' => $projet->id,
-            'type'      => 'BRD_XLSX',
-            'filename'  => $filename,
-            'path'      => $path,
-        ]);
-
-        return response()->json([
-            'message'      => 'BRD Excel généré avec succès',
-            'filename'     => $filename,
-            'download_url' => route('exports.download', $doc->id, false),
-            'export'       => $doc,
-        ]);
+        return $this->createExportResponse(
+            $projet,
+            'BRD_XLSX',
+            $this->brdService->generate($projet),
+            'BRD Excel généré avec succès',
+        );
     }
 
-    public function download(ExportDocument $export): BinaryFileResponse
+    public function download(ExportDocument $export): BinaryFileResponse|StreamedResponse
     {
-        if (!file_exists($export->path)) {
-            abort(404, 'Fichier introuvable');
-        }
-
-        $mimeType = match ($export->type) {
-            'BRD_XLSX' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            default    => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        };
-
-        return Response::download($export->path, $export->filename, [
-            'Content-Type' => $mimeType,
-        ]);
+        return $this->storageService->download($export);
     }
 
     public function listExports(Projet $projet): JsonResponse
@@ -103,11 +64,25 @@ class ExportController extends Controller
 
     public function destroy(ExportDocument $export): JsonResponse
     {
-        if (file_exists($export->path)) {
-            unlink($export->path);
-        }
+        $this->storageService->delete($export);
         $export->delete();
 
         return response()->json(['message' => 'Fichier supprimé avec succès']);
+    }
+
+    private function createExportResponse(
+        Projet $projet,
+        string $type,
+        string $localPath,
+        string $message,
+    ): JsonResponse {
+        $doc = $this->storageService->store($projet, $type, $localPath);
+
+        return response()->json([
+            'message' => $message,
+            'filename' => $doc->filename,
+            'download_url' => route('exports.download', $doc->id, false),
+            'export' => $doc,
+        ]);
     }
 }
