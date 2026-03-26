@@ -1,48 +1,23 @@
-# CpsGen - Project Setup
+# CPS Gen v1.0
 
-## Stack
+Générateur automatique de documents (CPS, RC, BDP) pour les marchés publics au Maroc.
 
-- **Backend**: Laravel
-- **Frontend**: React
-- **Database**: PostgreSQL
-- **Auth**: Laravel Sanctum
-- **Containerization**: Docker
+Le frontend est terminé . Toutes les fonctionnalités de base fonctionnent très bien pour cette première version.
 
----
+## Lancer le projet
 
-## Current Progress
+Ce projet a deux parties à lancer séparément :
 
-### Done
-- Docker environment setup (backend, frontend, database)
-- Database migrations & seeders
-- Models: `Projet`, `Article`, `ArticleVariant`, `PrixCatalogue`, `ProjectArticle`, `ProjectPrix`, `ExportDocument`
-- Export services: CPS, RC, BRD document generation
-- Full REST API with Sanctum authentication
+**1. Lancer l'API (Backend) :**
+```bash
+cd backend
+php artisan serve
+```
 
-### API Endpoints
+**2. Lancer l'Interface (Frontend) :**
+```bash
+cd frontend
+npm run dev
+```
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/status` | No | Health check + DB status |
-| POST | `/api/auth/register` | No | Register |
-| POST | `/api/auth/login` | No | Login |
-| POST | `/api/auth/logout` | Yes | Logout |
-| GET | `/api/auth/me` | Yes | Current user |
-| GET | `/api/catalogue-articles/categories` | Yes | Article categories |
-| GET/POST/PUT/DELETE | `/api/catalogue-articles` | Yes | Catalogue CRUD |
-| GET/POST/PUT/DELETE | `/api/articles` | Yes | Articles CRUD |
-| GET/POST/PUT/DELETE | `/api/projets` | Yes | Projects CRUD |
-| GET/POST/PUT/DELETE | `/api/projets/{projet}/articles` | Yes | Project articles |
-| GET/POST/PUT/DELETE | `/api/projets/{projet}/prix` | Yes | Project prices |
-| POST | `/api/projets/{projet}/exports/cps` | Yes | Export CPS |
-| POST | `/api/projets/{projet}/exports/rc` | Yes | Export RC |
-| POST | `/api/projets/{projet}/exports/brd` | Yes | Export BRD |
-| GET | `/api/projets/{projet}/exports` | Yes | List exports |
-| GET | `/api/exports/{export}/download` | No | Download export |
-| DELETE | `/api/exports/{export}` | Yes | Delete export |
 
----
-
-## Next Steps
-
-- Frontend (React) setup
